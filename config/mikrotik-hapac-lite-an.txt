@@ -1,0 +1,148 @@
+# nov/13/2018 18:34:31 by RouterOS 6.43.2
+# software id = H116-ZUB7
+#
+# model = RouterBOARD 952Ui-5ac2nD
+# serial number = 71B106A060A2
+/interface bridge
+add admin-mac=6C:3B:6B:64:B2:AD auto-mac=no comment=defconf fast-forward=no name=bridge
+add fast-forward=no name=guest-bridge
+/interface ethernet
+set [ find default-name=ether1 ] advertise=10M-half,10M-full,100M-half,100M-full,1000M-half,1000M-full mac-address=B8:88:E3:65:FC:24
+set [ find default-name=ether2 ] advertise=10M-half,10M-full,100M-half,100M-full,1000M-half,1000M-full name=ether2-master
+set [ find default-name=ether3 ] advertise=10M-half,10M-full,100M-half,100M-full,1000M-half,1000M-full
+set [ find default-name=ether4 ] advertise=10M-half,10M-full,100M-half,100M-full,1000M-half,1000M-full
+set [ find default-name=ether5 ] advertise=10M-half,10M-full,100M-half,100M-full,1000M-half,1000M-full
+/interface l2tp-client
+add connect-to=msk.vpnki.ru ipsec-secret=vpnki name=l2tp-vpnki password=xxx use-ipsec=yes user=xxx
+/interface pptp-client
+add connect-to=msk.vpnki.ru disabled=no name=pptp-vpnki password=xxx user=xxx
+/interface list
+add exclude=dynamic name=discover
+add name=mactel
+add name=mac-winbox
+/interface wireless security-profiles
+set [ find default=yes ] authentication-types=wpa-psk,wpa2-psk mode=dynamic-keys supplicant-identity=MikroTik wpa-pre-shared-key=xxx wpa2-pre-shared-key=xxx
+add authentication-types=wpa-psk,wpa2-psk mode=dynamic-keys name=profile supplicant-identity=MikroTik wpa-pre-shared-key=xxx wpa2-pre-shared-key=xxx
+add authentication-types=wpa-psk,wpa2-psk eap-methods="" group-ciphers=tkip,aes-ccm management-protection=allowed mode=dynamic-keys name=xxx supplicant-identity="" unicast-ciphers=tkip,aes-ccm wpa-pre-shared-key=xxx \
+    wpa2-pre-shared-key=corado-racoon
+add authentication-types=wpa-psk,wpa2-psk eap-methods="" group-ciphers=tkip,aes-ccm management-protection=allowed mode=dynamic-keys name=246 supplicant-identity="" unicast-ciphers=tkip,aes-ccm wpa-pre-shared-key=xxx wpa2-pre-shared-key=\
+    xxx
+add authentication-types=wpa-psk,wpa2-psk eap-methods="" group-ciphers=tkip,aes-ccm management-protection=allowed mode=dynamic-keys name=Romashka supplicant-identity="" unicast-ciphers=tkip,aes-ccm wpa-pre-shared-key=00000000 wpa2-pre-shared-key=\
+    00000000
+/interface wireless
+set [ find default-name=wlan1 ] band=2ghz-b/g/n distance=indoors frequency=2447 name=Romashka security-profile=Romashka ssid=Romashka wireless-protocol=802.11 wps-mode=disabled
+add disabled=no keepalive-frames=disabled mac-address=6E:3B:6B:64:B2:B3 master-interface=Romashka multicast-buffering=disabled name="Samsung S5" security-profile=246 ssid="Samsung S5" wds-cost-range=0 wds-default-cost=0 wps-mode=disabled
+set [ find default-name=wlan2 ] band=5ghz-a/n bridge-mode=disabled country=russia disabled=no distance=indoors frequency=5765 mac-address=50:B7:C3:25:98:AF name=wlan-5G-to-ANT security-profile=ANT-Guest ssid=ANT-guest wireless-protocol=802.11 \
+    wps-mode=disabled
+add disabled=no mac-address=6E:3B:6B:64:B2:B2 master-interface=Romashka name="HTC 2" ssid="HTC 2" wps-mode=disabled
+add disabled=no keepalive-frames=disabled mac-address=52:B7:C3:25:98:AF master-interface=wlan-5G-to-ANT multicast-buffering=disabled name="iPhone 5C" security-profile=246 ssid="iPhone 5C" wds-cost-range=0 wds-default-cost=0 wps-mode=disabled
+/ip hotspot profile
+set [ find default=yes ] html-directory=flash/hotspot
+/ip pool
+add name=dhcp ranges=192.168.8.50-192.168.8.254
+add name=guest-pool ranges=192.168.7.50-192.168.7.250
+/ip dhcp-server
+add address-pool=dhcp authoritative=after-2sec-delay disabled=no interface=bridge name=defconf
+add address-pool=guest-pool authoritative=after-2sec-delay disabled=no interface=guest-bridge lease-time=12h name=guest-dhcp
+/queue simple
+add max-limit=5M/5M name=guest-limit target=guest-bridge
+/snmp community
+set [ find default=yes ] addresses=192.168.9.0/24 name=yifan
+/interface bridge filter
+# no interface
+add action=drop chain=forward in-interface=*9
+# no interface
+add action=drop chain=forward out-interface=*9
+# HTC 2 not ready
+# in/out-bridge-port matcher not possible when interface (HTC 2) is not slave
+add action=drop chain=forward in-interface="HTC 2"
+# HTC 2 not ready
+# in/out-bridge-port matcher not possible when interface (HTC 2) is not slave
+add action=drop chain=forward out-interface="HTC 2"
+/interface bridge port
+add bridge=bridge comment=defconf interface=ether2-master
+add bridge=guest-bridge interface="HTC 2"
+add bridge=bridge interface="Samsung S5"
+add bridge=bridge interface="iPhone 5C"
+add bridge=bridge interface=ether3
+add bridge=bridge interface=ether4
+add bridge=bridge interface=ether5
+/ip neighbor discovery-settings
+set discover-interface-list=discover
+/interface list member
+add interface="Samsung S5" list=discover
+add interface="iPhone 5C" list=discover
+add interface=ether2-master list=mactel
+add interface=wlan-5G-to-ANT list=mactel
+add interface=Romashka list=mactel
+add interface=ether2-master list=mac-winbox
+add list=mactel
+add interface="HTC 2" list=mactel
+add interface=wlan-5G-to-ANT list=mac-winbox
+add interface=Romashka list=mac-winbox
+add list=mac-winbox
+add interface="HTC 2" list=mac-winbox
+/ip address
+add address=192.168.8.1/24 comment=defconf interface=ether2-master network=192.168.8.0
+add address=192.168.7.1/24 interface=guest-bridge network=192.168.7.0
+/ip dhcp-client
+add add-default-route=no comment=defconf dhcp-options=hostname,clientid disabled=no interface=ether1 use-peer-dns=no
+add dhcp-options=hostname,clientid disabled=no interface=Romashka
+add dhcp-options=hostname,clientid disabled=no interface=wlan-5G-to-ANT use-peer-dns=no
+/ip dhcp-server network
+add address=192.168.7.0/24 gateway=192.168.7.1
+add address=192.168.8.0/24 comment=defconf gateway=192.168.8.1 netmask=24
+/ip dns
+set allow-remote-requests=yes servers=8.8.8.8
+/ip dns static
+add address=192.168.8.1 name=router
+/ip firewall filter
+add action=accept chain=input comment="defconf: accept ICMP" protocol=icmp
+add action=accept chain=input comment="defconf: accept established,related" connection-state=established,related
+add action=drop chain=input comment="defconf: drop all from WAN" in-interface=ether1
+add action=drop chain=input comment="defconf: drop all from WAN" in-interface=wlan-5G-to-ANT
+add action=fasttrack-connection chain=forward comment="defconf: fasttrack" connection-state=established,related in-interface=!guest-bridge out-interface=!guest-bridge
+add action=accept chain=forward comment="defconf: accept established,related" connection-state=established,related
+add action=drop chain=forward comment="defconf: drop invalid" connection-state=invalid
+add action=drop chain=forward comment="defconf:  drop all from WAN not DSTNATed" connection-nat-state=!dstnat connection-state=new in-interface=ether1
+/ip firewall nat
+add action=masquerade chain=srcnat comment="defconf: masquerade" out-interface=ether1
+add action=masquerade chain=srcnat comment="defconf: masquerade" out-interface=Romashka
+add action=masquerade chain=srcnat comment="defconf: masquerade" out-interface=wlan-5G-to-ANT
+/ip route
+add distance=1 dst-address=10.20.0.0/16 gateway=ether1
+add distance=1 dst-address=172.16.0.0/16 gateway=172.16.0.1
+add distance=1 dst-address=192.168.9.0/24 gateway=172.16.0.1
+/ip route rule
+add action=unreachable dst-address=10.20.0.0/16 src-address=192.168.7.0/24
+add action=unreachable dst-address=192.168.7.0/24 src-address=10.20.0.0/16
+/ip service
+set telnet address=192.168.8.0/24
+set ftp disabled=yes
+set www address=192.168.8.0/24
+set ssh address=192.168.8.0/24
+set api address=192.168.8.0/24,192.168.9.0/24
+set winbox address=192.168.8.0/24
+set api-ssl address=192.168.8.0/24
+/ip smb shares
+set [ find default=yes ] directory=/pub
+/snmp
+set enabled=yes
+/system clock
+set time-zone-autodetect=no time-zone-name=Europe/Moscow
+/system clock manual
+set time-zone=+03:00
+/system ntp client
+set enabled=yes server-dns-names=0.pool.ntp.org,1.pool.ntp.org
+/system routerboard settings
+set silent-boot=no
+/tool graphing interface
+add allow-address=192.168.8.0/24
+/tool graphing queue
+add allow-address=192.168.8.0/24
+/tool graphing resource
+add allow-address=192.168.8.0/24
+/tool mac-server
+set allowed-interface-list=mactel
+/tool mac-server mac-winbox
+set allowed-interface-list=mac-winbox
