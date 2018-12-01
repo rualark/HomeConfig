@@ -1,4 +1,4 @@
-# nov/30/2018 13:58:37 by RouterOS 6.43.4
+# dec/01/2018 14:49:55 by RouterOS 6.43.4
 # software id = WP4U-Z565
 #
 # model = RB4011iGS+
@@ -16,6 +16,8 @@ set [ find default-name=ether7 ] l2mtu=1598
 set [ find default-name=ether8 ] l2mtu=1598
 set [ find default-name=ether9 ] l2mtu=1598
 set [ find default-name=ether10 ] l2mtu=1598 name=ether10-trunk
+/interface l2tp-client
+add connect-to=msk.vpnki.ru disabled=no ipsec-secret=vpnki name=vpnki password=xxx use-ipsec=yes user=xxx
 /interface vlan
 add interface=bridge name=vlan13-guest vlan-id=13
 /interface list
@@ -79,6 +81,8 @@ add action=masquerade chain=srcnat dst-port=80 protocol=tcp src-address=192.168.
 add action=netmap chain=dstnat dst-port=80 in-interface=ether1-wan protocol=tcp to-addresses=192.168.9.4 to-ports=80
 /ip route
 add distance=1 gateway=192.168.100.1
+add distance=1 dst-address=172.16.0.0/16 gateway=172.16.0.1
+add distance=1 dst-address=192.168.8.0/24 gateway=172.16.0.1
 /ip traffic-flow
 set cache-entries=32k interfaces=local
 /snmp
