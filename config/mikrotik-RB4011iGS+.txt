@@ -1,4 +1,4 @@
-# dec/01/2018 23:02:21 by RouterOS 6.43.4
+# dec/08/2018 18:06:34 by RouterOS 6.43.4
 # software id = WP4U-Z565
 #
 # model = RB4011iGS+
@@ -84,7 +84,9 @@ add distance=1 gateway=192.168.100.1
 add distance=1 dst-address=172.16.0.0/16 gateway=172.16.0.1
 add distance=1 dst-address=192.168.8.0/24 gateway=172.16.0.1
 /ip traffic-flow
-set cache-entries=32k interfaces=local
+set cache-entries=32k enabled=yes interfaces=bridge
+/ip traffic-flow target
+add dst-address=192.168.9.4 port=9996 version=5
 /snmp
 set enabled=yes location=Alchemistry
 /system clock
@@ -97,5 +99,18 @@ set silent-boot=no
 set allowed-interface-list=LAN
 /tool mac-server mac-winbox
 set allowed-interface-list=LAN
+/tool romon
+set enabled=yes
+/tool romon port
+set [ find default=yes ] forbid=yes
+add disabled=no interface=ether10-trunk
+add disabled=no interface=ether2
+add disabled=no interface=ether3
+add disabled=no interface=ether4-mgmt-far
+add disabled=no interface=ether5-mgmt-close
+add disabled=no interface=ether6-trunk-sw
+add disabled=no interface=ether7
+add disabled=no interface=ether8
+add disabled=no interface=ether9
 /tool sniffer
 set filter-interface=vlan13-guest
