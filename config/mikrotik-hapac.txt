@@ -1,4 +1,4 @@
-# nov/30/2018 14:06:46 by RouterOS 6.43.4
+# dec/08/2018 18:09:09 by RouterOS 6.43.4
 # software id = R9TC-1I4K
 #
 # model = RouterBOARD 962UiGS-5HacT2HnT
@@ -6,23 +6,33 @@
 /interface bridge
 add admin-mac=6C:3B:6B:11:EB:C1 auto-mac=no name=bridge vlan-filtering=yes
 /interface wireless
-set [ find default-name=wlan1 ] band=2ghz-b/g/n channel-width=20/40mhz-Ce disabled=no distance=indoors frequency=auto mode=ap-bridge ssid=alch wireless-protocol=802.11
-set [ find default-name=wlan2 ] band=5ghz-a/n/ac channel-width=20/40/80mhz-Ceee disabled=no distance=indoors frequency=auto mode=ap-bridge ssid=alch5 wireless-protocol=802.11
+set [ find default-name=wlan1 ] band=2ghz-b/g/n channel-width=20/40mhz-Ce \
+    disabled=no distance=indoors frequency=auto mode=ap-bridge ssid=alch \
+    wireless-protocol=802.11
+set [ find default-name=wlan2 ] band=5ghz-a/n/ac channel-width=20/40/80mhz-Ceee \
+    disabled=no distance=indoors frequency=auto mode=ap-bridge ssid=alch5 \
+    wireless-protocol=802.11
 /interface vlan
 add interface=bridge name=vlan13-guest vlan-id=13
 /interface list
 add comment=defconf name=WAN
 add comment=defconf name=LAN
 /interface wireless security-profiles
-set [ find default=yes ] authentication-types=wpa-psk,wpa2-psk eap-methods="" mode=dynamic-keys supplicant-identity=MikroTik wpa-pre-shared-key=1231231231 wpa2-pre-shared-key=1231231231
-add authentication-types=wpa-psk,wpa2-psk eap-methods="" mode=dynamic-keys name=profile-guest supplicant-identity=MikroTik wpa-pre-shared-key=1231231231 wpa2-pre-shared-key=1231231231
+set [ find default=yes ] authentication-types=wpa-psk,wpa2-psk eap-methods="" \
+    mode=dynamic-keys supplicant-identity=MikroTik wpa-pre-shared-key=\
+    xxx wpa2-pre-shared-key=xxx
+add authentication-types=wpa-psk,wpa2-psk eap-methods="" mode=dynamic-keys \
+    name=profile-guest supplicant-identity=MikroTik wpa-pre-shared-key=\
+    xxx wpa2-pre-shared-key=xxx
 /interface wireless
-add disabled=no mac-address=6E:3B:6B:11:EB:C6 master-interface=wlan2 name=wlan3 security-profile=profile-guest ssid=alch5-guest
-add disabled=no mac-address=6E:3B:6B:11:EB:C7 master-interface=wlan1 name=wlan4 security-profile=profile-guest ssid=alch-guest
+add disabled=no mac-address=6E:3B:6B:11:EB:C6 master-interface=wlan2 name=wlan3 \
+    security-profile=profile-guest ssid=alch5-guest
+add disabled=no mac-address=6E:3B:6B:11:EB:C7 master-interface=wlan1 name=wlan4 \
+    security-profile=profile-guest ssid=alch-guest
 /ip hotspot profile
 set [ find default=yes ] html-directory=flash/hotspot
 /snmp community
-set [ find default=yes ] name=yifan
+set [ find default=yes ] name=xxx
 /interface bridge port
 add bridge=bridge interface=ether1
 add bridge=bridge interface=ether3
@@ -46,13 +56,22 @@ set allow-remote-requests=yes servers=8.8.8.8
 /ip dns static
 add address=192.168.9.2 name=router.lan
 /ip firewall filter
-add action=accept chain=forward comment="defconf: accept in ipsec policy" disabled=yes ipsec-policy=in,ipsec
-add action=accept chain=forward comment="defconf: accept out ipsec policy" disabled=yes ipsec-policy=out,ipsec
-add action=fasttrack-connection chain=forward comment="defconf: fasttrack" connection-state=established,related disabled=yes
-add action=accept chain=forward comment="defconf: accept established,related, untracked" connection-state=established,related,untracked disabled=yes
-add action=drop chain=forward disabled=yes dst-address=192.168.9.0/24 in-interface=vlan13-guest
-add action=drop chain=forward comment="defconf: drop invalid" connection-state=invalid disabled=yes
-add action=drop chain=forward comment="defconf:  drop all from WAN not DSTNATed" connection-nat-state=!dstnat connection-state=new disabled=yes in-interface-list=WAN
+add action=accept chain=forward comment="defconf: accept in ipsec policy" \
+    disabled=yes ipsec-policy=in,ipsec
+add action=accept chain=forward comment="defconf: accept out ipsec policy" \
+    disabled=yes ipsec-policy=out,ipsec
+add action=fasttrack-connection chain=forward comment="defconf: fasttrack" \
+    connection-state=established,related disabled=yes
+add action=accept chain=forward comment=\
+    "defconf: accept established,related, untracked" connection-state=\
+    established,related,untracked disabled=yes
+add action=drop chain=forward disabled=yes dst-address=192.168.9.0/24 \
+    in-interface=vlan13-guest
+add action=drop chain=forward comment="defconf: drop invalid" connection-state=\
+    invalid disabled=yes
+add action=drop chain=forward comment=\
+    "defconf:  drop all from WAN not DSTNATed" connection-nat-state=!dstnat \
+    connection-state=new disabled=yes in-interface-list=WAN
 /ip route
 add distance=1 gateway=192.168.9.1
 /snmp
@@ -63,5 +82,7 @@ set time-zone-name=Europe/Moscow
 set name=HAP_AC
 /system routerboard settings
 set silent-boot=no
+/tool romon
+set enabled=yes
 /tool sniffer
 set filter-interface=ether4 filter-ip-address=192.168.9.6/32
