@@ -1,4 +1,5 @@
-# sep/01/2019 13:25:44 by RouterOS 6.45.3
+[admin@RB4011] > /export 
+# oct/04/2021 00:40:07 by RouterOS 6.48.4
 # software id = WP4U-Z565
 #
 # model = RB4011iGS+
@@ -6,18 +7,18 @@
 /interface bridge
 add admin-mac=B8:69:F4:92:25:57 auto-mac=no name=bridge vlan-filtering=yes
 /interface ethernet
-set [ find default-name=ether1 ] l2mtu=1598 name=ether1-wan
-set [ find default-name=ether2 ] l2mtu=1598
-set [ find default-name=ether3 ] l2mtu=1598
-set [ find default-name=ether4 ] l2mtu=1598 name=ether4-mgmt
-set [ find default-name=ether5 ] l2mtu=1598
-set [ find default-name=ether6 ] l2mtu=1598 name=ether6-trunk-sw
+set [ find default-name=ether1 ] l2mtu=1598 name=ether1-mgts
+set [ find default-name=ether2 ] l2mtu=1598 name=ether2-hap-ac
+set [ find default-name=ether3 ] l2mtu=1598 name=ether3-seven-sky
+set [ find default-name=ether4 ] l2mtu=1598 name=ether4-eco
+set [ find default-name=ether5 ] l2mtu=1598 name=ether5-pc
+set [ find default-name=ether6 ] l2mtu=1598 name=ether6-server
 set [ find default-name=ether7 ] l2mtu=1598
 set [ find default-name=ether8 ] l2mtu=1598
 set [ find default-name=ether9 ] l2mtu=1598
-set [ find default-name=ether10 ] l2mtu=1598 name=ether10-trunk-hap
+set [ find default-name=ether10 ] l2mtu=1598 poe-out=off
 /interface l2tp-client
-add connect-to=msk.vpnki.ru ipsec-secret=vpnki name=vpnki password=*** use-ipsec=yes user=user6663
+add connect-to=msk.vpnki.ru ipsec-secret=******** name=vpnki password=********* use-ipsec=yes user=user6663
 /interface sstp-server
 add name=sstp-in-ant user=sstp_user
 /interface vlan
@@ -31,41 +32,66 @@ set [ find default=yes ] supplicant-identity=MikroTik
 add name=dhcp ranges=192.168.9.50-192.168.9.254
 add name=dhcp-guest ranges=192.168.13.50-192.168.13.254
 /ip dhcp-server
-add address-pool=dhcp disabled=no interface=bridge name=defconf
+add address-pool=dhcp disabled=no interface=bridge lease-time=3d name=defconf
 add address-pool=dhcp-guest disabled=no interface=vlan13-guest name=dhcp-guest
 /ppp profile
 add local-address=172.16.30.1 name=ovpn remote-address=172.16.30.2
 /snmp community
 set [ find default=yes ] name=yifan
+/system logging action
+set 3 bsd-syslog=yes remote=192.168.9.7 syslog-facility=local2
+/user group
+set full policy=local,telnet,ssh,ftp,reboot,read,write,policy,test,winbox,password,web,sniff,sensitive,api,romon,dude,tikapp
 /interface bridge port
-add bridge=bridge interface=ether10-trunk-hap
-add bridge=bridge interface=ether5
-add bridge=bridge interface=ether6-trunk-sw
-add bridge=bridge interface=ether2
-add bridge=bridge interface=ether3
-add bridge=bridge interface=ether4-mgmt pvid=13
+add bridge=bridge interface=ether10
+add bridge=bridge interface=ether5-pc
+add bridge=bridge interface=ether6-server
+add bridge=bridge interface=ether2-hap-ac
 add bridge=bridge interface=ether7
 add bridge=bridge interface=sfp-sfpplus1
+add bridge=bridge interface=ether9 multicast-router=disabled pvid=13
+add bridge=bridge interface=ether8
 /ip neighbor discovery-settings
 set discover-interface-list=LAN
 /interface bridge vlan
-add bridge=bridge tagged=ether10-trunk-hap,ether6-trunk-sw,bridge vlan-ids=13
+add bridge=bridge tagged=ether10,ether6-server,bridge vlan-ids=13
+/interface detect-internet
+set detect-interface-list=WAN
 /interface list member
 add comment=defconf interface=bridge list=LAN
-add comment=defconf interface=ether1-wan list=WAN
+add comment=defconf interface=ether1-mgts list=WAN
 add interface=vlan13-guest list=LAN
+add interface=ether3-seven-sky list=WAN
+add interface=ether4-eco list=WAN
 /interface ovpn-server server
 set certificate=server.crt_0 default-profile=ovpn enabled=yes
 /interface sstp-server server
 set authentication=mschap2 enabled=yes port=445
 /ip address
-add address=192.168.100.2/24 interface=ether1-wan network=192.168.100.0
+add address=192.168.1.100/24 interface=ether1-mgts network=192.168.1.0
 add address=192.168.13.1/24 interface=vlan13-guest network=192.168.13.0
 add address=192.168.9.1/24 interface=bridge network=192.168.9.0
+add address=10.12.236.75/21 interface=ether4-eco network=10.12.232.0
 /ip cloud
-set ddns-enabled=yes
+set ddns-enabled=yes ddns-update-interval=1m
+/ip dhcp-client
+add add-default-route=no disabled=no interface=ether3-seven-sky use-peer-dns=no use-peer-ntp=no
+/ip dhcp-server lease
+add address=192.168.9.10 mac-address=D8:F2:CA:38:DA:38 server=defconf
+add address=192.168.9.9 client-id=1:30:e3:7a:96:e2:9a mac-address=30:E3:7A:96:E2:9A server=defconf
+add address=192.168.9.8 client-id=1:4c:cc:6a:84:77:be mac-address=4C:CC:6A:84:77:BE server=defconf
+add address=192.168.9.14 client-id=1:58:2d:34:0:c0:d2 mac-address=58:2D:34:00:C0:D2 server=defconf
+add address=192.168.9.16 client-id=1:54:ef:44:c8:e:31 comment="Xiaomi Gateway 3" mac-address=54:EF:44:C8:0E:31 server=defconf
+add address=192.168.9.15 client-id=1:4e:5b:28:68:8d:7 mac-address=4E:5B:28:68:8D:07 server=defconf
+add address=192.168.9.5 client-id=1:0:c:29:d1:a3:43 mac-address=00:0C:29:D1:A3:43 server=defconf
+add address=192.168.9.13 client-id=1:d8:12:65:33:41:6e mac-address=D8:12:65:33:41:6E server=defconf
+add address=192.168.9.11 comment="Xiaomi AC2100" mac-address=B0:B2:DC:3E:22:F6 server=defconf
+add address=192.168.9.20 mac-address=5C:E5:0C:46:8D:4A server=defconf
+add address=192.168.9.19 client-id=1:50:ec:50:71:b:ce mac-address=50:EC:50:71:0B:CE server=defconf
+add address=192.168.9.18 client-id=1:58:fd:b1:93:ce:30 mac-address=58:FD:B1:93:CE:30 server=defconf
+add address=192.168.9.17 client-id=1:60:af:6d:e0:84:c4 mac-address=60:AF:6D:E0:84:C4 server=defconf
 /ip dhcp-server network
-add address=192.168.9.0/24 gateway=192.168.9.1 netmask=24
+add address=192.168.9.0/24 dns-server=8.8.8.8 gateway=192.168.9.1 netmask=24
 add address=192.168.13.0/24 gateway=192.168.13.1 netmask=24
 /ip dns
 set allow-remote-requests=yes servers=8.8.8.8
@@ -77,8 +103,18 @@ add address=bt2.t-ru.org comment=bt2 list=RuTracker
 add address=bt3.t-ru.org comment=bt3 list=RuTracker
 add address=bt4.t-ru.org comment=bt4 list=RuTracker
 /ip firewall filter
+add action=drop chain=output comment="Netwatch only through mgts" dst-address=64.6.65.6 out-interface=!ether1-mgts
+add action=drop chain=forward comment="Poll only through mgts" dst-address=64.6.65.6 out-interface=!ether1-mgts
+add action=drop chain=forward comment="Poll only through mgts" dst-address=95.165.24.1 out-interface=!ether1-mgts
+add action=drop chain=forward comment="Poll only through mgts" dst-address=95.165.26.13 out-interface=!ether1-mgts
 add action=accept chain=input comment="defconf: accept established,related,untracked" connection-state=established,related,untracked
-add action=accept chain=input dst-port=445 in-interface=ether1-wan protocol=tcp
+add action=accept chain=input comment="Remote Winbox Administration" dst-port=8291 protocol=tcp
+add action=accept chain=input disabled=yes dst-port=445 in-interface=ether1-mgts protocol=tcp
+add action=drop chain=forward comment="Poll only through eco" dst-address=9.9.9.9 out-interface=!ether4-eco
+add action=drop chain=forward comment="Poll only through eco" dst-address=10.12.232.1 out-interface=!ether4-eco
+add action=drop chain=forward comment="Poll only through seven" dst-address=10.4.192.1 out-interface=!ether3-seven-sky
+add action=drop chain=forward comment="Poll only through seven" dst-address=81.200.2.249 out-interface=!ether3-seven-sky
+add action=drop chain=forward disabled=yes dst-port=123 protocol=udp src-address=192.168.9.0/24
 add action=drop chain=input comment="defconf: drop invalid" connection-state=invalid
 add action=accept chain=input comment="defconf: accept ICMP" protocol=icmp
 add action=drop chain=input comment="defconf: drop all not coming from LAN" in-interface-list=!LAN
@@ -90,23 +126,38 @@ add action=drop chain=forward disabled=yes dst-address=192.168.9.0/24 in-interfa
 add action=drop chain=forward comment="defconf: drop invalid" connection-state=invalid
 add action=drop chain=forward comment="defconf:  drop all from WAN not DSTNATed" connection-nat-state=!dstnat connection-state=new in-interface-list=WAN
 /ip firewall nat
-add action=masquerade chain=srcnat comment="defconf: masquerade" ipsec-policy=out,none out-interface-list=WAN
-add action=netmap chain=dstnat dst-port=3484 in-interface=ether1-wan protocol=tcp to-addresses=192.168.9.4 to-ports=3306
-add action=netmap chain=dstnat dst-port=444 in-interface=ether1-wan protocol=tcp to-addresses=192.168.9.6 to-ports=3389
-add action=netmap chain=dstnat dst-port=443 in-interface=ether1-wan protocol=tcp to-addresses=192.168.9.4 to-ports=443
+add action=masquerade chain=srcnat ipsec-policy=out,none out-interface=ether1-mgts
+add action=masquerade chain=srcnat ipsec-policy=out,none out-interface=ether4-eco
+add action=masquerade chain=srcnat ipsec-policy=out,none out-interface=ether3-seven-sky
+add action=netmap chain=dstnat disabled=yes dst-port=3484 in-interface-list=WAN protocol=tcp to-addresses=192.168.9.4 to-ports=3306
+add action=netmap chain=dstnat dst-port=444 in-interface-list=WAN protocol=tcp to-addresses=192.168.9.6 to-ports=3389
+add action=netmap chain=dstnat dst-port=445 in-interface-list=WAN protocol=tcp to-addresses=192.168.9.3 to-ports=3389
+add action=netmap chain=dstnat dst-port=443 in-interface-list=WAN protocol=tcp to-addresses=192.168.9.4 to-ports=443
 add action=masquerade chain=srcnat dst-port=80 protocol=tcp src-address=192.168.9.0/24
 add action=masquerade chain=srcnat dst-port=443 protocol=tcp src-address=192.168.9.0/24
-add action=netmap chain=dstnat dst-port=80 in-interface=ether1-wan protocol=tcp to-addresses=192.168.9.4 to-ports=80
-add action=netmap chain=dstnat disabled=yes dst-port=587 in-interface=ether1-wan protocol=tcp to-addresses=192.168.9.4 to-ports=587
-add action=netmap chain=dstnat disabled=yes dst-port=143 in-interface=ether1-wan protocol=tcp to-addresses=192.168.9.4 to-ports=143
-add action=netmap chain=dstnat disabled=yes dst-port=110 in-interface=ether1-wan protocol=tcp to-addresses=192.168.9.4 to-ports=110
-add action=netmap chain=dstnat disabled=yes dst-port=25 in-interface=ether1-wan protocol=tcp to-addresses=192.168.9.4 to-ports=25
+add action=netmap chain=dstnat dst-port=80 in-interface-list=WAN protocol=tcp to-addresses=192.168.9.4 to-ports=80
+add action=netmap chain=dstnat disabled=yes dst-port=587 in-interface=ether1-mgts protocol=tcp to-addresses=192.168.9.4 to-ports=587
+add action=netmap chain=dstnat disabled=yes dst-port=143 in-interface=ether1-mgts protocol=tcp to-addresses=192.168.9.4 to-ports=143
+add action=netmap chain=dstnat disabled=yes dst-port=110 in-interface=ether1-mgts protocol=tcp to-addresses=192.168.9.4 to-ports=110
+add action=netmap chain=dstnat disabled=yes dst-port=25 in-interface=ether1-mgts protocol=tcp to-addresses=192.168.9.4 to-ports=25
 add action=dst-nat chain=dstnat dst-address-list=RuTracker dst-port=80 in-interface-list=LAN protocol=tcp to-addresses=163.172.167.207 to-ports=3128
 /ip route
-add distance=1 gateway=192.168.100.1
+add distance=5 gateway=192.168.1.1
+add comment=ECO_AUTO_CONTROLLED disabled=yes distance=1 gateway=10.12.232.1
+add distance=1 dst-address=9.9.9.9/32 gateway=10.12.232.1
+add distance=1 dst-address=10.4.192.1/32 gateway=ether3-seven-sky
+add distance=1 dst-address=10.12.232.1/32 gateway=ether4-eco
+add distance=1 dst-address=64.6.65.6/32 gateway=192.168.1.1
+add distance=1 dst-address=81.200.2.249/32 gateway=ether3-seven-sky
+add distance=1 dst-address=95.165.24.1/32 gateway=192.168.1.1
+add distance=1 dst-address=95.165.26.13/32 gateway=192.168.1.1
 add disabled=yes distance=1 dst-address=172.16.0.0/16 gateway=172.16.0.1
+add disabled=yes distance=1 dst-address=192.168.6.0/24 gateway=192.168.9.3
 add distance=1 dst-address=192.168.8.0/24 gateway=172.16.30.2
 add disabled=yes distance=1 dst-address=192.168.8.0/24 gateway=172.16.0.1
+/ip service
+set api disabled=yes
+set api-ssl disabled=yes
 /ip ssh
 set allow-none-crypto=yes forwarding-enabled=remote
 /ip traffic-flow
@@ -114,30 +165,68 @@ set cache-entries=32k enabled=yes interfaces=bridge
 /ip traffic-flow target
 add dst-address=192.168.9.4 port=9996 version=5
 /ppp secret
-add local-address=172.16.30.1 name=sstp_user password=*** remote-address=172.16.30.2 service=sstp
-add local-address=172.16.30.1 name=ovpn_user password=*** remote-address=172.16.30.2 service=ovpn
+add local-address=172.16.30.1 name=sstp_user password=********* remote-address=172.16.30.2 service=sstp
+add local-address=172.16.30.1 name=ovpn_user password=********* remote-address=172.16.30.2 service=ovpn
 /snmp
 set enabled=yes location=Alchemistry
 /system clock
 set time-zone-autodetect=no time-zone-name=Europe/Moscow
 /system identity
 set name=RB4011
+/system logging
+add action=remote topics=critical
+add action=remote topics=error
+/system scheduler
+add interval=3s name=autoroute on-event=":local i 0\r\
+    \n\r\
+    \n:if ([/ip route get [find comment=\"ECO_AUTO_CONTROLLED\"] disabled]=yes) do={\r\
+    \n    #:log error \"AUTO_CONTROLLED found disabled\"\r\
+    \n    :do {:set i (\$i + 1)} while  (\$i < 5 &&  ([/ping 64.6.65.6 interval=500ms count=1]=0))\r\
+    \n    :if (\$i=5) do={\r\
+    \n        #:log info \"AUTO_CONTROLLED route enabled\"\r\
+    \n        /ip route enable [find comment=\"ECO_AUTO_CONTROLLED\"]\r\
+    \n        /ip firewall connection remove [find]\r\
+    \n        /tool e-mail send to=\"rualark@gmail.com\" subject=\"Switched from MGTS to ECO\" body=\"\$[/system clock get date]\"\r\
+    \n    } else={\r\
+    \n        #:log error \"AUTO_CONTROLLED route not enabled\"\r\
+    \n    }\r\
+    \n} else={\r\
+    \n    #:log error \"AUTO_CONTROLLED not found disabled\"\r\
+    \n    :if ([/ip route get [find comment=\"ECO_AUTO_CONTROLLED\"] disabled]=no) do={\r\
+    \n        #:log error \"AUTO_CONTROLLED found enabled\"\r\
+    \n        :do {:set i (\$i + 1)} while  (\$i < 5 &&  ([/ping 64.6.65.6 interval=500ms count=1]=1))\r\
+    \n        :if (\$i=5) do={\r\
+    \n            #:log info \"AUTO_CONTROLLED route disabled\"\r\
+    \n            /ip route disable [find comment=\"ECO_AUTO_CONTROLLED\"]\r\
+    \n            /ip firewall connection remove [find]\r\
+    \n            /tool e-mail send to=\"rualark@gmail.com\" subject=\"Switched from ECO  to MGTS\" body=\"\$[/system clock get date]\"\r\
+    \n        } else={\r\
+    \n            #:log error \"AUTO_CONTROLLED route not disabled\"\r\
+    \n        }\r\
+    \n    } else={\r\
+    \n        :log error \"AUTO_CONTROLLED route not found\"\r\
+    \n    }\r\
+    \n}" policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon start-date=oct/03/2021 start-time=21:16:05
+/tool e-mail
+set address=smtp.gmail.com from=artportal.su@gmail.com password=********* port=587 start-tls=yes user=artportal.su@gmail.com
 /tool mac-server
 set allowed-interface-list=LAN
 /tool mac-server mac-winbox
 set allowed-interface-list=LAN
+/tool netwatch
+add disabled=yes down-script="/ip route enable [find comment=\"ECO_AUTO_CONTROLLED\"]\r\
+    \n/ip firewall connection remove [find]" host=64.6.65.6 interval=1s up-script="/ip route disable [find comment=\"ECO_AUTO_CONTROLLED\"]\r\
+    \n/ip firewall connection remove [find]"
 /tool romon
 set enabled=yes
 /tool romon port
 set [ find default=yes ] forbid=yes
-add disabled=no interface=ether10-trunk-hap
-add disabled=no interface=ether2
-add disabled=no interface=ether3
-add disabled=no interface=ether4-mgmt
-add disabled=no interface=ether5
-add disabled=no interface=ether6-trunk-sw
+add disabled=no interface=ether10
+add disabled=no interface=ether2-hap-ac
+add disabled=no interface=ether3-seven-sky
+add disabled=no interface=ether4-eco
+add disabled=no interface=ether5-pc
+add disabled=no interface=ether6-server
 add disabled=no interface=ether7
 add disabled=no interface=ether8
 add disabled=no interface=ether9
-/tool sniffer
-set filter-interface=ether1-wan filter-port=smb
