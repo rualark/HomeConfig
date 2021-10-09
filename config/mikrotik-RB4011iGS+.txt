@@ -1,5 +1,5 @@
 [admin@RB4011] > /export
-# oct/09/2021 11:49:07 by RouterOS 6.48.4
+# oct/09/2021 15:15:18 by RouterOS 6.48.4
 # software id = WP4U-Z565
 #
 # model = RB4011iGS+
@@ -131,8 +131,8 @@ add action=netmap chain=dstnat dst-port=80 in-interface-list=WAN protocol=tcp to
 add action=dst-nat chain=dstnat dst-address-list=RuTracker dst-port=80 in-interface-list=LAN protocol=tcp to-addresses=163.172.167.207 to-ports=3128
 /ip route
 add comment="Servers always to MGTS" distance=1 gateway=192.168.1.1 routing-mark=server
-add comment=ECO_AUTO_CONTROLLED distance=3 gateway=10.12.232.1
 add distance=5 gateway=192.168.1.1
+add comment=ECO_AUTO_CONTROLLED disabled=yes distance=3 gateway=10.12.232.1
 add distance=1 dst-address=10.4.192.1/32 gateway=ether3-seven-sky
 add distance=1 dst-address=10.12.232.1/32 gateway=ether4-eco
 add distance=1 dst-address=77.88.8.1/32 gateway=192.168.1.1
@@ -159,35 +159,62 @@ set name=RB4011
 add action=remote topics=critical
 add action=remote topics=error
 /system scheduler
-add interval=3s name="MGTS probe" on-event=":local i 0\r\
+add interval=3s name="MGTS probe" on-event=":global RouteComment ECO_AUTO_CONTROLLED\r\
     \n\r\
-    \n:if ([/ip route get [find comment=\"ECO_AUTO_CONTROLLED\"] disabled]=yes) do={\r\
-    \n    #:log error \"AUTO_CONTROLLED found disabled\"\r\
+    \n:global Notify do={\r\
+    \n    :local BotToken XXXXXX\r\
+    \n    :local BotChat -XXXXX\r\
+    \n    :local i 0\r\
+    \n    :local success 0\r\
+    \n    :do {\r\
+    \n        :set i (\$i + 1)\r\
+    \n        :do {\r\
+    \n            :local res [/tool fetch url=\"https://api.telegram.org/bot\$BotToken/sendMessage\?chat_id=\$BotChat&text=\$1\" mode=https as-value output=user]\r\
+    \n            :log info \"Telegram message sent: \$1\"\r\
+    \n            :set success 1\r\
+    \n        } on-error={\r\
+    \n            :log error \"Error sending telegram message \$1, retrying\"\r\
+    \n            :delay 10000ms;\r\
+    \n        }\r\
+    \n    } while  (\$i < 10 && success=0)\r\
+    \n    :if (\$i=10) do={\r\
+    \n        /tool e-mail send to=\"rualark@gmail.com\" subject=\"\$1\" body=\"\$[/system identity get name] \$[/system clock get date] \$[/system clock get time] Uptime \$[/system resource get uptime] http://alch.mooo.com/mon MGTS up=\$[/interface \
+    get ether1-mgts running] ECO up=\$[/interface get ether4-eco running] Unable to send telegram message\"\r\
+    \n    }\r\
+    \n}\r\
+    \n\r\
+    \n:global ClearConnections do={\r\
+    \n    :local i 0\r\
+    \n    :local success 0\r\
+    \n    :do {\r\
+    \n        :set i (\$i + 1)\r\
+    \n        :do {\r\
+    \n            /ip firewall connection remove [find]\r\
+    \n            :log info \"Connections cleared\"\r\
+    \n            :set success 1\r\
+    \n        } on-error={\r\
+    \n            :log error \"Error clearing connections, retrying\"\r\
+    \n            :delay 1000ms;\r\
+    \n        }\r\
+    \n    } while  (\$i < 5 && success=0)\r\
+    \n}\r\
+    \n\r\
+    \n:local i 0\r\
+    \n\r\
+    \n:if ([/ip route get [find comment=\$RouteComment] disabled]=yes) do={\r\
     \n    :do {:set i (\$i + 1)} while  (\$i < 5 &&  ([/ping 77.88.8.1 interval=500ms count=1]=0))\r\
     \n    :if (\$i=5) do={\r\
-    \n        #:log info \"ECO_AUTO_CONTROLLED route enabled\"\r\
-    \n        /ip route enable [find comment=\"ECO_AUTO_CONTROLLED\"]\r\
-    \n        /ip firewall connection remove [find]\r\
-    \n        /tool fetch url=\"https://api.telegram.org/botXXXXX/sendMessage\?chat_id=-XXXXX&text=MGTS down\"\r\
-    \n        /tool e-mail send to=\"rualark@gmail.com\" subject=\"MGTS probe down, switched to ECO\" body=\"\$[/system identity get name] \$[/system clock get date] \$[/system clock get time] Uptime \$[/system resource get uptime] http://alch.mooo.c\
-    om/mon MGTS up=\$[/interface get ether1-mgts running]\"\r\
-    \n    } else={\r\
-    \n        #:log error \"AUTO_CONTROLLED route not enabled\"\r\
+    \n        /ip route enable [find comment=\$RouteComment]\r\
+    \n        \$ClearConnections\r\
+    \n        \$Notify \"MGTS down\"\r\
     \n    }\r\
     \n} else={\r\
-    \n    #:log error \"AUTO_CONTROLLED not found disabled\"\r\
-    \n    :if ([/ip route get [find comment=\"ECO_AUTO_CONTROLLED\"] disabled]=no) do={\r\
-    \n        #:log error \"AUTO_CONTROLLED found enabled\"\r\
+    \n    :if ([/ip route get [find comment=\$RouteComment] disabled]=no) do={\r\
     \n        :do {:set i (\$i + 1)} while  (\$i < 5 &&  ([/ping 77.88.8.1 interval=500ms count=1]=1))\r\
     \n        :if (\$i=5) do={\r\
-    \n            #:log info \"AUTO_CONTROLLED route disabled\"\r\
-    \n            /ip route disable [find comment=\"ECO_AUTO_CONTROLLED\"]\r\
-    \n            /ip firewall connection remove [find]\r\
-    \n            /tool fetch url=\"https://api.telegram.org/botXXXXXX/sendMessage\?chat_id=-XXXXX&text=MGTS up\"\r\
-    \n            /tool e-mail send to=\"rualark@gmail.com\" subject=\"MGTS probe up, switched to MGTS\" body=\"\$[/system identity get name] \$[/system clock get date] \$[/system clock get time] Uptime \$[/system resource get uptime] http://alch.moo\
-    o.com/mon\"\r\
-    \n        } else={\r\
-    \n            #:log error \"AUTO_CONTROLLED route not disabled\"\r\
+    \n            /ip route disable [find comment=\$RouteComment]\r\
+    \n            \$ClearConnections\r\
+    \n            \$Notify \"MGTS up\"\r\
     \n        }\r\
     \n    } else={\r\
     \n        :log error \"AUTO_CONTROLLED route not found\"\r\
@@ -195,31 +222,27 @@ add interval=3s name="MGTS probe" on-event=":local i 0\r\
     \n}" policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon start-time=startup
 add interval=3s name="ECO probe" on-event=":local i 0\r\
     \n\r\
-    \n:if ([/ip route get [find comment=\"ECO_AUTO_CONTROLLED\"] distance]=3) do={\r\
+    \n:if ([/ip route get [find comment=\$RouteComment] distance]=3) do={\r\
     \n    :do {:set i (\$i + 1)} while  (\$i < 5 &&  ([/ping 77.88.8.8 interval=500ms count=1]=0))\r\
     \n    :if (\$i=5) do={\r\
-    \n        /ip route set [find comment=\"ECO_AUTO_CONTROLLED\"] distance=9\r\
-    \n        /ip firewall connection remove [find]\r\
-    \n        /tool fetch url=\"https://api.telegram.org/botXXXXX/sendMessage\?chat_id=-XXXXXX&text=ECO down\"\r\
+    \n        /ip route set [find comment=\$RouteComment] distance=9\r\
+    \n        \$ClearConnections\r\
+    \n        \$Notify \"ECO down\"\r\
     \n    }\r\
     \n} else={\r\
-    \n    :if ([/ip route get [find comment=\"ECO_AUTO_CONTROLLED\"] distance]=9) do={\r\
+    \n    :if ([/ip route get [find comment=\$RouteComment] distance]=9) do={\r\
     \n        :do {:set i (\$i + 1)} while  (\$i < 5 &&  ([/ping 77.88.8.8 interval=500ms count=1]=1))\r\
     \n        :if (\$i=5) do={\r\
-    \n            /ip route set [find comment=\"ECO_AUTO_CONTROLLED\"] distance=3\r\
-    \n            /ip firewall connection remove [find]\r\
-    \n            /tool fetch url=\"https://api.telegram.org/botXXXXXX/sendMessage\?chat_id=-XXXXX&text=ECO up\"\r\
+    \n            /ip route set [find comment=\$RouteComment] distance=3\r\
+    \n            \$ClearConnections\r\
+    \n            \$Notify \"ECO up\"\r\
     \n        }\r\
     \n    } else={\r\
     \n        :log error \"AUTO_CONTROLLED route not found\"\r\
     \n    }\r\
     \n}" policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon start-date=oct/09/2021 start-time=08:34:03
-/system script
-add dont-require-permissions=no name=test_email owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=\
-    "/tool e-mail send to=\"rualark@gmail.com\" subject=\"Switched from MGTS to ECO\" body=\"\$[/system identity get name] \$[/system clock get date] \$[/system clock get time]\"\r\
-    \n"
 /tool e-mail
-set address=smtp.gmail.com from=artportal.su@gmail.com password=******** port=587 start-tls=yes user=artportal.su@gmail.com
+set address=smtp.gmail.com from=artportal.su@gmail.com password=XXXXX port=587 start-tls=yes user=artportal.su@gmail.com
 /tool mac-server
 set allowed-interface-list=LAN
 /tool mac-server mac-winbox
