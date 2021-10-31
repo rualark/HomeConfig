@@ -242,9 +242,9 @@ add interval=5s name=update_dhcp_clients on-event=\
     ":local regTable [/ip dhcp-server lease print as-value]\r\
     \n/tool fetch keep-result=no http-method=post http-data=\"\$regTable;time=\$[/system clock get time]\" url=\"http://192.168.9.4/mon/wifi/associate_dhcp.php\"\r\
     \n" policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon start-date=oct/10/2021 start-time=20:09:54
-add interval=5s name=PingTelegram on-event=":local BotToken 2073264319:AAEgTrmyPDWb2Y56iYjICi0JV0bpFiByCCU\r\
-    \n:local BotChat 289165657\r\
-    \n:local BotChat2 -1001624503194\r\
+add interval=5s name=PingTelegram on-event=":local BotToken XXXXXXXX\r\
+    \n:local BotChat XXXXXXXX\r\
+    \n:local BotChat2 XXXXXXXX\r\
     \n\r\
     \n:local action \"typing\"\r\
     \n:if ([/ip route get [find comment=\$RouteComment] disabled]=yes) do={\r\
@@ -264,8 +264,8 @@ add interval=5s name=PingTelegram on-event=":local BotToken 2073264319:AAEgTrmyP
 add name=Init on-event=":global RouteComment ECO_AUTO_CONTROLLED\r\
     \n\r\
     \n:global Notify do={\r\
-    \n    :local BotToken 2073264319:AAEgTrmyPDWb2Y56iYjICi0JV0bpFiByCCU\r\
-    \n    :local BotChat -1001624503194\r\
+    \n    :local BotToken XXXXXXXX\r\
+    \n    :local BotChat XXXXXXXX\r\
     \n    :local i 0\r\
     \n    :local success 0\r\
     \n    :do {\r\
