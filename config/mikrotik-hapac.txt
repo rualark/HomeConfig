@@ -1,4 +1,5 @@
-# dec/08/2018 18:13:50 by RouterOS 6.43.4
+[admin@HAP_AC] > /export compact
+# oct/31/2021 23:58:56 by RouterOS 6.49
 # software id = R9TC-1I4K
 #
 # model = RouterBOARD 962UiGS-5HacT2HnT
@@ -6,43 +7,52 @@
 /interface bridge
 add admin-mac=6C:3B:6B:11:EB:C1 auto-mac=no name=bridge vlan-filtering=yes
 /interface wireless
-set [ find default-name=wlan1 ] band=2ghz-b/g/n channel-width=20/40mhz-Ce disabled=no distance=indoors frequency=auto mode=ap-bridge ssid=alch wireless-protocol=802.11
-set [ find default-name=wlan2 ] band=5ghz-a/n/ac channel-width=20/40/80mhz-Ceee disabled=no distance=indoors frequency=auto mode=ap-bridge ssid=alch5 wireless-protocol=802.11
+set [ find default-name=wlan1 ] adaptive-noise-immunity=ap-and-client-mode allow-sharedkey=yes antenna-gain=0 band=2ghz-b/g/n country=russia3 disabled=no distance=indoors frequency=2437 hw-protection-mode=rts-cts hw-retries=15 installation=indoor \
+    mode=ap-bridge multicast-helper=disabled name=alch ssid=alch station-roaming=enabled tx-power=12 tx-power-mode=all-rates-fixed wireless-protocol=802.11 wps-mode=disabled
+add disabled=no mac-address=6E:3B:6B:11:EB:C7 master-interface=alch name=alch-hap ssid=alch-hap station-roaming=enabled wps-mode=disabled
+add disabled=no keepalive-frames=disabled mac-address=6E:3B:6B:11:EB:C9 master-interface=alch multicast-buffering=disabled multicast-helper=disabled name=alch-zyxel ssid=alch-zyxel wds-cost-range=0 wds-default-cost=0 wps-mode=disabled
+set [ find default-name=wlan2 ] antenna-gain=0 band=5ghz-a/n/ac channel-width=20/40/80mhz-XXXX country=no_country_set disabled=no distance=indoors frequency=auto frequency-mode=manual-txpower mode=ap-bridge name=alch5 ssid=alch5 station-roaming=\
+    enabled wireless-protocol=802.11 wps-mode=disabled
 /interface vlan
 add interface=bridge name=vlan13-guest vlan-id=13
 /interface list
 add comment=defconf name=WAN
 add comment=defconf name=LAN
 /interface wireless security-profiles
-set [ find default=yes ] authentication-types=wpa-psk,wpa2-psk eap-methods="" mode=dynamic-keys supplicant-identity=MikroTik wpa-pre-shared-key=xxx wpa2-pre-shared-key=xxx
-add authentication-types=wpa-psk,wpa2-psk eap-methods="" mode=dynamic-keys name=profile-guest supplicant-identity=MikroTik wpa-pre-shared-key=xxx wpa2-pre-shared-key=xxx
-/interface wireless
-add disabled=no mac-address=6E:3B:6B:11:EB:C6 master-interface=wlan2 name=wlan3 security-profile=profile-guest ssid=alch5-guest
-add disabled=no mac-address=6E:3B:6B:11:EB:C7 master-interface=wlan1 name=wlan4 security-profile=profile-guest ssid=alch-guest
-/ip hotspot profile
-set [ find default=yes ] html-directory=flash/hotspot
+set [ find default=yes ] authentication-types=wpa2-psk eap-methods="" group-key-update=1d mode=dynamic-keys static-algo-0=40bit-wep static-key-0=XXXXXXXX supplicant-identity=MikroTik wpa-pre-shared-key=XXXXXXXX wpa2-pre-shared-key=XXXXXXXX
+add authentication-types=wpa-psk,wpa2-psk eap-methods="" group-key-update=1d mode=dynamic-keys name=profile-guest supplicant-identity=MikroTik wpa-pre-shared-key=XXXXXXXX wpa2-pre-shared-key=XXXXXXXX
+add authentication-types=wpa-psk,wpa2-psk eap-methods="" group-ciphers=tkip group-key-update=1d mode=dynamic-keys name=wpa supplicant-identity="" unicast-ciphers=tkip wpa-pre-shared-key=XXXXXXXX wpa2-pre-shared-key=XXXXXXXX
 /snmp community
-set [ find default=yes ] name=xxx
+set [ find default=yes ] name=yifan
+/system logging action
+set 0 memory-lines=5000
+set 3 bsd-syslog=yes remote=192.168.9.7 syslog-facility=local2
+/user group
+set full policy=local,telnet,ssh,ftp,reboot,read,write,policy,test,winbox,password,web,sniff,sensitive,api,romon,dude,tikapp
 /interface bridge port
 add bridge=bridge interface=ether1
 add bridge=bridge interface=ether3
 add bridge=bridge interface=ether4
-add bridge=bridge interface=ether5 pvid=13
+add bridge=bridge interface=ether5
 add bridge=bridge interface=ether2
-add bridge=bridge interface=wlan1
-add bridge=bridge interface=wlan2
-add bridge=bridge interface=wlan3 pvid=13
-add bridge=bridge interface=wlan4 pvid=13
-/interface bridge vlan
-add bridge=bridge tagged=ether1,bridge vlan-ids=13
+add bridge=bridge interface=alch
+add bridge=bridge interface=alch5
+add bridge=bridge interface=*12
+add bridge=bridge interface=alch-hap
+add bridge=bridge interface=*14
+add bridge=bridge interface=alch-zyxel
+/ip neighbor discovery-settings
+set discover-interface-list=!dynamic
 /interface list member
 add comment=defconf interface=bridge list=LAN
 add interface=sfp1 list=WAN
 /ip address
 add address=192.168.13.2/24 interface=vlan13-guest network=192.168.13.0
 add address=192.168.9.2/24 interface=bridge network=192.168.9.0
+/ip cloud
+set ddns-enabled=yes ddns-update-interval=1m update-time=no
 /ip dns
-set allow-remote-requests=yes servers=8.8.8.8
+set allow-remote-requests=yes max-concurrent-queries=500 max-concurrent-tcp-sessions=100 servers=8.8.8.8
 /ip dns static
 add address=192.168.9.2 name=router.lan
 /ip firewall filter
@@ -55,14 +65,98 @@ add action=drop chain=forward comment="defconf: drop invalid" connection-state=i
 add action=drop chain=forward comment="defconf:  drop all from WAN not DSTNATed" connection-nat-state=!dstnat connection-state=new disabled=yes in-interface-list=WAN
 /ip route
 add distance=1 gateway=192.168.9.1
+/ip service
+set api disabled=yes
+set api-ssl disabled=yes
+/ip ssh
+set allow-none-crypto=yes forwarding-enabled=remote
 /snmp
 set enabled=yes
 /system clock
 set time-zone-name=Europe/Moscow
 /system identity
 set name=HAP_AC
-/system routerboard settings
-set silent-boot=no
+/system logging
+add action=remote topics=critical
+add action=remote topics=error
+add disabled=yes topics=debug,!snmp
+add disabled=yes topics=health,interface,system,wireless,info
+add action=remote topics=wireless
+/system ntp client
+set enabled=yes primary-ntp=192.36.143.130 secondary-ntp=85.21.78.8
+/system scheduler
+add interval=10s name=internet on-event=":local i 0\r\
+    \n\r\
+    \n:if (\$InternetActive=1) do={\r\
+    \n    :do {:set i (\$i + 1)} while  (\$i < 15 &&  ([/ping 8.8.8.8 interval=500ms count=1]=0))\r\
+    \n    :if (\$i=15) do={\r\
+    \n        :set InternetActive 0\r\
+    \n        #\$Notify ([/system clock get time] . \" WiFi internet down\")\r\
+    \n        :set InternetDownTime [/system clock get time]\r\
+    \n    }\r\
+    \n} else={\r\
+    \n    :do {:set i (\$i + 1)} while  (\$i < 5 &&  ([/ping 8.8.8.8 interval=500ms count=1]=1))\r\
+    \n    :if (\$i=5) do={\r\
+    \n        :set InternetActive 1\r\
+    \n        if ([:len \$InternetDownTime] != 0 && [/system resource get uptime]>30) do={\r\
+    \n            \$Notify (\"No WiFi internet from \$InternetDownTime to \" . [/system clock get time])\r\
+    \n        }\r\
+    \n    }\r\
+    \n}\r\
+    \n" policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon start-date=oct/09/2021 start-time=17:16:26
+add interval=5s name=update_wifi_clients on-event=\
+    ":local regTable [/interface wireless registration-table print as-value];\r\
+    \n/tool fetch keep-result=no http-method=post http-data=\"\$regTable;time=\$[/system clock get time]\" url=\"http://192.168.9.4/mon/wifi/associate_wifi.php\"\r\
+    \n" policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon start-date=oct/10/2021 start-time=20:08:28
+add interval=5s name=PingTelegram on-event=":local BotToken XXXXXXXX\r\
+    \n:local BotChat XXXXXXXX\r\
+    \n/tool fetch url=\"https://api.telegram.org/bot\$BotToken/sendChatAction\?chat_id=\$BotChat&action=upload_document\" mode=https as-value output=user\r\
+    \n" policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon start-date=oct/27/2021 start-time=17:29:21
+add name=Init on-event=":global InternetDownTime\r\
+    \n\r\
+    \n:global Notify do={\r\
+    \n    :local BotToken XXXXXXXX\r\
+    \n    # :local BotToken XXXXXXXX\r\
+    \n    :local BotChat XXXXXXXX\r\
+    \n    :local i 0\r\
+    \n    :local success 0\r\
+    \n    :do {\r\
+    \n        :set i (\$i + 1)\r\
+    \n        :do {\r\
+    \n            /tool fetch url=\"https://api.telegram.org/bot\$BotToken/sendMessage\?chat_id=\$BotChat&text=\$1\" mode=https as-value output=user\r\
+    \n            :log info \"Telegram message sent: \$1\"\r\
+    \n            :set success 1\r\
+    \n        } on-error={\r\
+    \n            :log error \"Error sending telegram message \$1, retrying\"\r\
+    \n            :delay 10000ms;\r\
+    \n        }\r\
+    \n    } while  (\$i < 40 && success=0)\r\
+    \n    :if (\$i=40) do={\r\
+    \n        /tool e-mail send to=\"rualark@gmail.com\" subject=\"\$1\" body=\"\$[/system identity get name] \$[/system clock get date] \$[/system clock get time] Uptime \$[/system resource get uptime] http://alch.mooo.com/mon MGTS up=\$[/interface \
+    get ether1-mgts running] ECO up=\$[/interface get ether4-eco running] Unable to send telegram message\"\r\
+    \n    }\r\
+    \n}\r\
+    \n\r\
+    \n:global ClearConnections do={\r\
+    \n    :local i 0\r\
+    \n    :local success 0\r\
+    \n    :do {\r\
+    \n        :set i (\$i + 1)\r\
+    \n        :do {\r\
+    \n            /ip firewall connection remove [find]\r\
+    \n            :log info \"Connections cleared\"\r\
+    \n            :set success 1\r\
+    \n        } on-error={\r\
+    \n            :log error \"Error clearing connections, retrying\"\r\
+    \n            :delay 1000ms;\r\
+    \n        }\r\
+    \n    } while  (\$i < 5 && success=0)\r\
+    \n}\r\
+    \n\r\
+    \n:global InternetActive\r\
+    \n\r\
+    \n\$Notify ([/system clock get time] . \" Reboot\")\r\
+    \n" policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon start-time=startup
 /tool romon
 set enabled=yes
 /tool sniffer
